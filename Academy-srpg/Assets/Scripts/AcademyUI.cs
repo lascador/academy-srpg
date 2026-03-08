@@ -13,6 +13,34 @@ public class AcademyUI : MonoBehaviour
     [SerializeField] private ActivityData socialActivity;
     [SerializeField] private ActivityData restActivity;
 
+    private readonly DialogueLine[] trainingTestDialogue =
+    {
+        new DialogueLine
+        {
+            speakerName = "Instructor",
+            content = "좋아. 오늘은 기본기부터 다시 점검한다. 집중해."
+        },
+        new DialogueLine
+        {
+            speakerName = "Protagonist",
+            content = "네. 한 번 더 제대로 몸에 익혀보겠습니다."
+        }
+    };
+
+    private readonly DialogueLine[] restTestDialogue =
+    {
+        new DialogueLine
+        {
+            speakerName = "Protagonist",
+            content = "오늘은 조금 쉬어가자. 너무 몰아붙이면 오래 못 간다."
+        },
+        new DialogueLine
+        {
+            speakerName = "Narration",
+            content = "짧은 휴식 덕분에 긴장이 조금 풀렸다."
+        }
+    };
+
     private void Awake()
     {
         if (trainingButton != null)
@@ -70,6 +98,7 @@ public class AcademyUI : MonoBehaviour
     private void ExecuteTraining()
     {
         ExecuteActivity(trainingActivity);
+        DialogueManager.Show(trainingTestDialogue);
     }
 
     private void ExecuteSocial()
@@ -80,6 +109,7 @@ public class AcademyUI : MonoBehaviour
     private void ExecuteRest()
     {
         ExecuteActivity(restActivity);
+        DialogueManager.Show(restTestDialogue);
     }
 
     private void ExecuteActivity(ActivityData activity)
