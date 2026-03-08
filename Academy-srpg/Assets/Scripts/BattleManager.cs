@@ -117,10 +117,8 @@ public class BattleManager : MonoBehaviour
             return;
         }
 
-        if (turnManager != null)
-        {
-            turnManager.EndCurrentTurn();
-        }
+        SelectUnit(unit);
+        ExecuteEnemyTurn();
     }
 
     public void SelectUnit(Unit unit)
@@ -194,6 +192,7 @@ public class BattleManager : MonoBehaviour
 
         int damage = Mathf.Max(1, selectedUnit.attack - defender.defense);
         defender.TakeDamage(damage);
+        DamagePopup.Create(defender.transform.position, damage);
 
         if (!defender.IsAlive())
         {
@@ -268,6 +267,44 @@ public class BattleManager : MonoBehaviour
         currentState = BattleState.Idle;
     }
 
+    private void ExecuteEnemyTurn()
+    {
+        if (selectedUnit == null)
+        {
+            currentState = BattleState.Idle;
+            return;
+        }
+
+        Unit closestPlayerUnit = FindClosestPlayerUnit(selectedUnit);
+
+        if (closestPlayerUnit == null)
+        {
+            SkipAttack();
+            return;
+        }
+
+        Vector2Int bestMovePosition = GetBestMovePosition(closestPlayerUnit);
+
+        if (bestMovePosition != selectedUnit.gridPosition)
+        {
+            MoveUnit(bestMovePosition);
+        }
+        else
+        {
+            currentState = BattleState.Attacking;
+        }
+
+        Unit attackTarget = FindAttackTargetInRange();
+
+        if (attackTarget != null)
+        {
+            TryAttack(attackTarget.gridPosition);
+            return;
+        }
+
+        SkipAttack();
+    }
+
     private void RegisterUnitsOnGrid()
     {
         if (gridManager == null)
@@ -307,5 +344,81 @@ public class BattleManager : MonoBehaviour
     private int GetGridDistance(Vector2Int from, Vector2Int to)
     {
         return Mathf.Abs(from.x - to.x) + Mathf.Abs(from.y - to.y);
+    }
+
+    private Unit FindClosestPlayerUnit(Unit enemyUnit)
+    {
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        Unit closestUnit = null;
+        int closestDistance = int.MaxValue;
+
+        for (int index = 0; index < units.Length; index++)
+        {
+            Unit candidate = units[index];
+
+            if (candidate == null || !candidate.IsAlive() || !candidate.isPlayerUnit)
+            {
+                continue;
+            }
+
+            int distance = GetGridDistance(enemyUnit.gridPosition, candidate.gridPosition);
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestUnit = candidate;
+            }
+        }
+
+        return closestUnit;
+    }
+
+    private Vector2Int GetBestMovePosition(Unit targetUnit)
+    {
+        Vector2Int bestPosition = selectedUnit.gridPosition;
+        int bestDistance = GetGridDistance(bestPosition, targetUnit.gridPosition);
+
+        for (int index = 0; index < reachableTiles.Count; index++)
+        {
+            Vector2Int candidatePosition = reachableTiles[index];
+            int candidateDistance = GetGridDistance(candidatePosition, targetUnit.gridPosition);
+
+            if (candidateDistance < bestDistance)
+            {
+                bestDistance = candidateDistance;
+                bestPosition = candidatePosition;
+            }
+        }
+
+        return bestPosition;
+    }
+
+    private Unit FindAttackTargetInRange()
+    {
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        Unit targetUnit = null;
+        int closestDistance = int.MaxValue;
+
+        for (int index = 0; index < units.Length; index++)
+        {
+            Unit candidate = units[index];
+
+            if (candidate == null || !candidate.IsAlive() || candidate.isPlayerUnit == selectedUnit.isPlayerUnit)
+            {
+                continue;
+            }
+
+            int distance = GetGridDistance(selectedUnit.gridPosition, candidate.gridPosition);
+
+            if (distance > selectedUnit.attackRange || distance >= closestDistance)
+            {
+                continue;
+            }
+
+            closestDistance = distance;
+            targetUnit = candidate;
+        }
+
+        return targetUnit;
     }
 }
