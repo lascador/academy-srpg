@@ -4,9 +4,17 @@ using UnityEngine;
 
 public class TurnManager : MonoBehaviour
 {
+    public enum BattleResult
+    {
+        None,
+        Victory,
+        Defeat
+    }
+
     public List<Unit> allUnits = new List<Unit>();
     public Unit currentUnit;
     public int turnCount = 1;
+    public BattleResult CurrentBattleResult { get; private set; }
 
     public event Action<Unit> OnTurnChanged;
     public event Action OnBattleEnd;
@@ -24,6 +32,7 @@ public class TurnManager : MonoBehaviour
         currentUnit = null;
         turnCount = 1;
         battleEnded = false;
+        CurrentBattleResult = BattleResult.None;
 
         for (int index = 0; index < foundUnits.Length; index++)
         {
@@ -130,6 +139,9 @@ public class TurnManager : MonoBehaviour
 
         if (!battleEnded)
         {
+            CurrentBattleResult = hasAlivePlayerUnit && !hasAliveEnemyUnit
+                ? BattleResult.Victory
+                : BattleResult.Defeat;
             battleEnded = true;
             OnBattleEnd?.Invoke();
         }
