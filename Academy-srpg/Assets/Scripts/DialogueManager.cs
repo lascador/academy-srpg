@@ -8,6 +8,8 @@ public class DialogueManager : MonoBehaviour
 {
     public static DialogueManager Instance { get; private set; }
 
+    private const string PreferredFontAssetPath = "Assets/Fonts/KoPubWorld Batang Medium SDF.asset";
+
     [SerializeField] private float typeDelay = 0.03f;
     [SerializeField] private TMP_FontAsset dialogueFont;
     [SerializeField] private string preferredFontName = "KoPubWorld Batang Medium SDF";
@@ -276,8 +278,19 @@ public class DialogueManager : MonoBehaviour
     {
         if (dialogueFont != null)
         {
+            Debug.Log($"DialogueManager is using assigned font: {dialogueFont.name}");
             return dialogueFont;
         }
+
+#if UNITY_EDITOR
+        dialogueFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(PreferredFontAssetPath);
+
+        if (dialogueFont != null)
+        {
+            Debug.Log($"DialogueManager loaded font from asset path: {dialogueFont.name}");
+            return dialogueFont;
+        }
+#endif
 
         TMP_FontAsset[] fontAssets = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
 

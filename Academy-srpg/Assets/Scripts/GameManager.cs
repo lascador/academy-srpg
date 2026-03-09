@@ -6,7 +6,9 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    public int currentDay = 1;
     public int currentWeek = 1;
+    public AcademyTimeSlot currentTimeSlot = AcademyTimeSlot.Morning;
 
     [SerializeField] private string academySceneName = "AcademyScene";
     [SerializeField] private string battleSceneName = "BattleScene";
@@ -106,15 +108,18 @@ public class GameManager : MonoBehaviour
         if (hasSavedPlayerStats)
         {
             ApplySavedStatsToAcademyManager();
-            academyManager.currentWeek = currentWeek;
+            academyManager.SetCalendarState(currentDay, currentTimeSlot);
         }
         else
         {
+            currentDay = Mathf.Max(1, academyManager.currentDay);
             currentWeek = Mathf.Max(1, academyManager.currentWeek);
+            currentTimeSlot = academyManager.currentTimeSlot;
             SavePlayerStats(academyManager.playerStats);
         }
 
         academyManager.OnActivityCompleted += HandleActivityCompleted;
+        academyManager.OnScheduleChanged += HandleAcademyScheduleChanged;
     }
 
     private void BindTurnManager(string sceneName)
@@ -140,6 +145,7 @@ public class GameManager : MonoBehaviour
         if (academyManager != null)
         {
             academyManager.OnActivityCompleted -= HandleActivityCompleted;
+            academyManager.OnScheduleChanged -= HandleAcademyScheduleChanged;
             academyManager = null;
         }
 
@@ -157,9 +163,24 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        currentDay = Mathf.Max(1, academyManager.currentDay);
         currentWeek = Mathf.Max(1, academyManager.currentWeek);
+        currentTimeSlot = academyManager.currentTimeSlot;
         SavePlayerStats(academyManager.playerStats);
         TryTriggerBattleForCurrentWeek();
+    }
+
+    private void HandleAcademyScheduleChanged()
+    {
+        if (academyManager == null)
+        {
+            return;
+        }
+
+        currentDay = Mathf.Max(1, academyManager.currentDay);
+        currentWeek = Mathf.Max(1, academyManager.currentWeek);
+        currentTimeSlot = academyManager.currentTimeSlot;
+        SavePlayerStats(academyManager.playerStats);
     }
 
     private void HandleBattleEnd()

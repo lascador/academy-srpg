@@ -374,7 +374,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -437.5, y: 144.51}
+  m_AnchoredPosition: {x: -97.71, y: 144.51}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &304618473
@@ -898,8 +898,13 @@ MonoBehaviour:
     attack: 5
     defense: 3
     stress: 0
+  currentDay: 1
   currentWeek: 1
+  currentTimeSlot: 0
   activities: []
+  morningEvents: []
+  curriculumLessons: []
+  daysPerWeek: 5
 --- !u!4 &802736461
 Transform:
   m_ObjectHideFlags: 0

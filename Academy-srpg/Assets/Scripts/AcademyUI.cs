@@ -64,6 +64,7 @@ public class AcademyUI : MonoBehaviour
         if (academyManager != null)
         {
             academyManager.OnActivityCompleted += HandleActivityCompleted;
+            academyManager.OnScheduleChanged += RefreshUI;
         }
 
         RefreshUI();
@@ -74,6 +75,7 @@ public class AcademyUI : MonoBehaviour
         if (academyManager != null)
         {
             academyManager.OnActivityCompleted -= HandleActivityCompleted;
+            academyManager.OnScheduleChanged -= RefreshUI;
         }
     }
 
@@ -97,8 +99,7 @@ public class AcademyUI : MonoBehaviour
 
     private void ExecuteTraining()
     {
-        ExecuteActivity(trainingActivity);
-        DialogueManager.Show(trainingTestDialogue);
+        ExecuteActivity(trainingActivity, trainingTestDialogue);
     }
 
     private void ExecuteSocial()
@@ -108,18 +109,25 @@ public class AcademyUI : MonoBehaviour
 
     private void ExecuteRest()
     {
-        ExecuteActivity(restActivity);
-        DialogueManager.Show(restTestDialogue);
+        ExecuteActivity(restActivity, restTestDialogue);
     }
 
-    private void ExecuteActivity(ActivityData activity)
+    private void ExecuteActivity(ActivityData activity, DialogueLine[] postActivityDialogue = null)
     {
-        if (academyManager == null || activity == null)
+        if (academyManager == null || activity == null || !academyManager.CanExecutePlayerActivity())
         {
             return;
         }
 
         academyManager.ExecuteActivity(activity);
+
+        if (postActivityDialogue != null && postActivityDialogue.Length > 0)
+        {
+            DialogueManager.Show(postActivityDialogue, academyManager.ProcessAutomaticTimeSlots);
+            return;
+        }
+
+        academyManager.ProcessAutomaticTimeSlots();
     }
 
     private void HandleActivityCompleted(ActivityData activity)
@@ -141,8 +149,27 @@ public class AcademyUI : MonoBehaviour
         }
 
         CharacterStats stats = academyManager.playerStats;
+        bool canExecuteActivity = academyManager.CanExecutePlayerActivity();
+
+        if (trainingButton != null)
+        {
+            trainingButton.interactable = canExecuteActivity && trainingActivity != null;
+        }
+
+        if (socialButton != null)
+        {
+            socialButton.interactable = canExecuteActivity && socialActivity != null;
+        }
+
+        if (restButton != null)
+        {
+            restButton.interactable = canExecuteActivity && restActivity != null;
+        }
+
         statsText.text =
             $"Week: {academyManager.currentWeek}\n" +
+            $"Day: {academyManager.currentDay}\n" +
+            $"Time: {academyManager.GetCurrentTimeSlotLabel()}\n" +
             $"HP: {stats.hp}\n" +
             $"Attack: {stats.attack}\n" +
             $"Defense: {stats.defense}\n" +
