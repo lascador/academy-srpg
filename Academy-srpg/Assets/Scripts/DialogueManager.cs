@@ -8,11 +8,8 @@ public class DialogueManager : MonoBehaviour
 {
     public static DialogueManager Instance { get; private set; }
 
-    private const string PreferredFontAssetPath = "Assets/Fonts/KoPubWorld Batang Medium SDF.asset";
-
     [SerializeField] private float typeDelay = 0.03f;
     [SerializeField] private TMP_FontAsset dialogueFont;
-    [SerializeField] private string preferredFontName = "KoPubWorld Batang Medium SDF";
 
     public bool IsPlaying { get; private set; }
 
@@ -282,41 +279,7 @@ public class DialogueManager : MonoBehaviour
             return dialogueFont;
         }
 
-#if UNITY_EDITOR
-        dialogueFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(PreferredFontAssetPath);
-
-        if (dialogueFont != null)
-        {
-            Debug.Log($"DialogueManager loaded font from asset path: {dialogueFont.name}");
-            return dialogueFont;
-        }
-#endif
-
-        TMP_FontAsset[] fontAssets = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
-
-        for (int index = 0; index < fontAssets.Length; index++)
-        {
-            TMP_FontAsset fontAsset = fontAssets[index];
-
-            if (fontAsset != null && fontAsset.name == preferredFontName)
-            {
-                dialogueFont = fontAsset;
-                Debug.Log($"DialogueManager font set to {dialogueFont.name}");
-                return dialogueFont;
-            }
-        }
-
-        dialogueFont = TMP_Settings.defaultFontAsset;
-
-        if (dialogueFont != null)
-        {
-            Debug.LogWarning($"DialogueManager could not find '{preferredFontName}'. Falling back to {dialogueFont.name}.");
-        }
-        else
-        {
-            Debug.LogWarning($"DialogueManager could not find '{preferredFontName}' and no TMP default font is configured.");
-        }
-
+        dialogueFont = TMPFontResolver.GetPreferredFont();
         return dialogueFont;
     }
 

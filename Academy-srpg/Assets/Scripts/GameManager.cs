@@ -4,11 +4,19 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    public enum BattleActivityType
+    {
+        None,
+        WeekTrigger,
+        SaturdaySpecialActivity
+    }
+
     public static GameManager Instance { get; private set; }
 
     public int currentDay = 1;
     public int currentWeek = 1;
     public AcademyTimeSlot currentTimeSlot = AcademyTimeSlot.Morning;
+    public BattleActivityType CurrentBattleActivityType { get; private set; }
 
     [SerializeField] private string academySceneName = "AcademyScene";
     [SerializeField] private string battleSceneName = "BattleScene";
@@ -21,6 +29,8 @@ public class GameManager : MonoBehaviour
     private AcademyManager academyManager;
     private TurnManager turnManager;
     private bool hasSavedPlayerStats;
+    private int lastSaturdaySpecialBattleDay = -1;
+    private int completedSaturdaySpecialActivityDay = -1;
 
     private void Awake()
     {
@@ -84,6 +94,22 @@ public class GameManager : MonoBehaviour
         LoadSceneByName(battleSceneName);
     }
 
+    public bool TriggerSaturdaySpecialActivityBattle(int day)
+    {
+        int safeDay = Mathf.Max(1, day);
+
+        if (lastSaturdaySpecialBattleDay == safeDay)
+        {
+            Debug.Log($"Saturday special activity battle was already triggered for day {safeDay}.");
+            return false;
+        }
+
+        lastSaturdaySpecialBattleDay = safeDay;
+        CurrentBattleActivityType = BattleActivityType.SaturdaySpecialActivity;
+        LoadBattleScene();
+        return true;
+    }
+
     public void LoadGameOverScene()
     {
         LoadSceneByName(gameOverSceneName);
@@ -117,6 +143,8 @@ public class GameManager : MonoBehaviour
             currentTimeSlot = academyManager.currentTimeSlot;
             SavePlayerStats(academyManager.playerStats);
         }
+
+        academyManager.SetCompletedSaturdaySpecialActivityDay(completedSaturdaySpecialActivityDay);
 
         academyManager.OnActivityCompleted += HandleActivityCompleted;
         academyManager.OnScheduleChanged += HandleAcademyScheduleChanged;
@@ -181,22 +209,41 @@ public class GameManager : MonoBehaviour
         currentWeek = Mathf.Max(1, academyManager.currentWeek);
         currentTimeSlot = academyManager.currentTimeSlot;
         SavePlayerStats(academyManager.playerStats);
+
+        if (academyManager.IsSaturday() && currentTimeSlot == AcademyTimeSlot.Morning)
+        {
+            return;
+        }
+
+        TryTriggerBattleForCurrentWeek();
     }
 
     private void HandleBattleEnd()
     {
+        if (CurrentBattleActivityType == BattleActivityType.SaturdaySpecialActivity)
+        {
+            completedSaturdaySpecialActivityDay = currentDay;
+            currentTimeSlot = AcademyTimeSlot.AfterSchool;
+            CurrentBattleActivityType = BattleActivityType.None;
+            LoadAcademyScene();
+            return;
+        }
+
         if (turnManager == null)
         {
+            CurrentBattleActivityType = BattleActivityType.None;
             LoadAcademyScene();
             return;
         }
 
         if (turnManager.CurrentBattleResult == TurnManager.BattleResult.Victory)
         {
+            CurrentBattleActivityType = BattleActivityType.None;
             LoadAcademyScene();
             return;
         }
 
+        CurrentBattleActivityType = BattleActivityType.None;
         LoadGameOverScene();
     }
 
@@ -208,6 +255,7 @@ public class GameManager : MonoBehaviour
         }
 
         triggeredBattleWeeks.Add(currentWeek);
+        CurrentBattleActivityType = BattleActivityType.WeekTrigger;
         LoadBattleScene();
     }
 
